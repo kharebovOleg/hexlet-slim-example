@@ -1,0 +1,16 @@
+<form action="/users" method="post">
+  <div>
+    <label>
+        Имя
+      <input type="text" name="user[name]" value="<?= htmlspecialchars($user['name']) ?>">
+    </label>
+  </div>
+  <div>
+    <label>
+        Email
+      <input type="email" required name="user[email]" value="<?= htmlspecialchars($user['email']) ?>">
+    </label>
+  </div>
+  
+  <input type="submit" value="Sign Up">
+</form>
