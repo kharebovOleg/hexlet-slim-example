@@ -6,9 +6,6 @@ require __DIR__ . '/../vendor/autoload.php';
 use Slim\Factory\AppFactory;
 use DI\Container;
 
-// use Slim\Psr7\Response;
-// use Slim\Psr7\Factory\ResponseFactory;
-
 session_start();
 
 $container = new Container();
@@ -22,7 +19,9 @@ $container->set('flash', function () {
     return new \Slim\Flash\Messages();
 });
 
-$app = AppFactory::createFromContainer($container);
+AppFactory::setContainer($container);
+$app = AppFactory::create();
+
 $app->addErrorMiddleware(true, true, true);
 
 $usersJson = file_get_contents('date.txt');
@@ -31,7 +30,8 @@ $usersJsonArr = explode(';', $usersJson);
 $users = array_map(fn($user) => json_decode($user, true), $usersJsonArr);
 
 $app->get('/users', function($request, $response) use ($users) {
-    $params = ['users' => $users];
+    $messages = $this->get('flash')->getMessages();
+    $params = ['users' => $users, 'flash' => $messages];
     return $this->get('renderer')->render($response, 'users/show.phtml', $params);
 })->setName('users');
 
@@ -61,9 +61,11 @@ $app->post('/users', function ($request, $response) {
     if($user) {
         $jsonUser = json_encode($user);
         if(file_put_contents('date.txt', $jsonUser, FILE_APPEND)) {
+            $this->get('flash')->addMessage('success', 'This is a message');
             return $response->withHeader('Location', '/users')->withStatus(302);
         }
     }
+    $this->get('flash')->addMessage('error', 'This is a message');
     return $this->get('renderer')->render($response, "users/error.phtml");
 });
 
@@ -72,6 +74,24 @@ $app->get('/', function ($request, $response) {
     return $response;
     // Благодаря пакету slim/http этот же код можно записать короче
     //return $response->write('Welcome to Slim!');
+});
+
+$app->get('/foo', function ($req, $res) {
+    // Добавление флеш-сообщения. Оно станет доступным на следующий HTTP-запрос.
+    // 'success' — тип флеш-сообщения. Используется при выводе для форматирования.
+    // Например, можно ввести тип success и отражать его зеленым цветом (на Хекслете такого много)
+    $this->get('flash')->addMessage('success', 'This is a message');
+
+    return $res->withRedirect('/bar');
+});
+
+$app->get('/bar', function ($req, $res) {
+    // Извлечение flash-сообщений, установленных на предыдущем запросе
+    $messages = $this->get('flash')->getMessages();
+    print_r($messages); // => ['success' => ['This is a message']]
+
+    $params = ['flash' => $messages];
+    return $this->get('renderer')->render($res, "users/form.phtml", $params);
 });
 
 $app->run();
