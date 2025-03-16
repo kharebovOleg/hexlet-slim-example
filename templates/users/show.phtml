@@ -1,10 +1,5 @@
-<form action="/users" method="get">
-  <input type="search" name="term" value="" />
-  <input type="submit" value="Search" />
-</form>
+<p>users</p>
 
 <?php foreach ($users as $user): ?>
-    <p>
-        <?= $user['firstName'] ?>
-    </p>
-<?php endforeach ?>
+   <p><?php echo $user['name'] . ' : ' . $user['email']?></p>
+<?php endforeach?>
